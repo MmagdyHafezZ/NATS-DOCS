@@ -1,71 +1,39 @@
-# Environmental considerations
+# Environmental Considerations
 
-It is possible to deploy a load balancer between the client applications and the cluster
-servers (or even between servers in a cluster or between clusters in a super-cluster), but
-you don't need to: NATS already has its own mechanisms to balance the connections
-between the seeds in the connection URL (including the clients randomizing the returned
-DNS A records) and to automatically re-establish dropped connections. If you have a
-cluster with 3 seed nodes you often get more network throughput than going through a
-load balancer (cloud provider load balancers can be woefully under-powered, not to
-mention it costs you more money as the load balancer is typically billed by the amount of
-data going through it). Finally, if you want to use TLS for authentication you do not want
-the load balancer to be the TLS termination point.
+Deploying a load balancer between client applications and NATS cluster servers (or even between servers in a cluster or between clusters in a super-cluster) is possible, but often unnecessary due to NATS' own mechanisms for balancing connections and automatically re-establishing dropped connections. Load balancers can introduce overhead and additional costs, especially if TLS termination is involved.
 
-```
-If you decide tconnection and auto use load balancers with No-discovery behavior. ATS you need to understand the client and cluster
-```
-Client connections and rmessages from one client connections between seroutes are permanent. Therefore a load balancer will not distributevers, or worse (which is common when (^)
-deploying on autclustered) servers to which the clients will ro-cong environments), you end up with randomly connect. edundant, but disconnected (non-Advertising needs to be
-switched offserver cong or congur option. ed to point to the load balancer address through the advertise
-Load balancers can also cause issues thrproblems due to packet inspection, and ephemerough impral port problems at high scale.operly congured idle detection, protocol
-If routes or gatewakind of problems mentioned aboy connections go thrve, which could rough load balancers, yesults in JetStrou could veam lost quorum periodsery well have the (^)
-and create undue re-synchronization and protocol overhead trac.
+## Load Balancers
+
+### Load Balancer Considerations
+
+If you decide to use load balancers with NATS, it is crucial to understand the client and cluster connection behavior:
+
+- **No-Discovery Behavior**: Client connections and routes are permanent. A load balancer will not distribute messages from one client connection to another or between servers. In auto-config environments, this can lead to redundant but disconnected servers.
+- **Advertising**: Load balancers can interfere with server advertising mechanisms. Servers should be configured to point to the load balancer address through the advertise configuration option.
+- **Packet Inspection and Idle Detection**: Improperly configured load balancers can cause issues with packet inspection and idle detection, leading to ephemeral port problems at high scale.
+- **Quorum and Synchronization**: Routes or gateway connections through load balancers can disrupt JetStream quorum periods and cause undue re-synchronization and protocol overhead traffic.
+
+### Sensible Use Cases
+
+There are scenarios where running client connections through load balancers makes sense, such as:
+
+- **Simplified Client Configuration**: Load balancers can simplify client configuration by presenting a single port of entry or automatically connecting to the geographically closest cluster node.
+- **Cluster Transparency**: If NATS servers are set up as clusters (or superclusters), which provide transparent message routing, a load balancer can help distribute connections more efficiently.
 
 ## Networking
 
-## Load balancers
+NATS is designed to be 'cloud native' and can be deployed in virtual environments and/or containers. However, to ensure the highest possible level of performance, consider the following:
 
+### Instance and Storage Selection
 
-There are some sensible use cases for running client connections through load
-balancers. If the balanced NATS servers are setup as clusters (or superclusters), which
-provide transparent message routing, the load balancer can simplify the client cong by
-presenting a single port of entry, or automatically connect to the geographically closed
-cluster node.
+- **Network Optimized Instances**: Non-network optimized instances may have variable network bandwidth, leading to performance degradation over time. Opt for network-optimized instance types to ensure consistent network performance.
+- **Storage Options**: Local SSDs provide the best latency, while network-attached block storage (e.g., AWS EBS) can offer high throughput. Be mindful of storage type limitations and select IO-optimized storage for consistent performance.
 
-NATS is 'cloud native' and expected to be deployed in virtual environments and/or
-containers.
-However, when it comes to ensuring the highest possible level of performance that NATS
-can provide it is good to keep a few things in mind.
-Think of Core NATS servers as a software equivalent of network switches. Enable
-JetStream, and they also become a new kind of DB server as well.
-What you need to remember is that when selecting the instance types and storage
-options for your NATS server host instances that in public clouds: you get what you pay
-for.
-For example non network optimized instances may give you 10 Gb/s of network
-bandwidth... but only for some period of time (like 30 minutes), after which the available
-bandwidth may drop down dramatically (like to 5 Gb/s) for another period of time. So
-select network optimized instances types instead if you always need the advertised
-bandwidth.
-It's the same when it comes to storage options: local SSDs instance types can provide the
-best latency, while using a network attached block storage, e.g. Elastic Block Storage
-from AWS), can provide the highest overall throughput. When using EBS again you get
-what you pay for: general purpose storage type may give you a certain number of IOPS,
-but you can sustain those rates only for some period of time after which the number can
-drop down dramatically. So select IO optimized storage types if you want to continuously
-sustain the same max number of IOPS (e.g. AWS.
+### Virtualization and Containerization
 
-## Virtualization, Containerization
+- **Resource Limits**: Set resource limits for nats-server containers carefully. The nats-server process uses resources proportionate to the load traffic generated by client applications. High or bursty usage requires appropriate resource limits to prevent container orchestration systems from killing the server's container.
+- **Memory Management**: The nats-server will use all available host memory by default. Specify GOMEMLIMIT to limit memory usage within the container. This option is available in official NATS Helm charts.
 
+## Summary
 
-Be careful when setting resource limits for the nats-server containers. The nats-server
-processes use resources in proportion to the load trac generated by all the client
-applications, if the NATS (and JetStream) usage is high or in bursts ( nats-server is very
-fast and can process sharp bursts in trac), then you will need to set the container
-resource limits accordingly, or the container orchestration system will kill the server's
-container. The nats-server will automatically detect number of available cores, but it will
-try to use all host memory, not the resource limits set for the container, unless you specify
-GOMEMLIMIT. GOMEMLIMIT is an available option in ocial NATS helm charts.
-
-### Resource Limits
-
-
+Deploying NATS in a cloud-native environment involves careful consideration of load balancers, networking, and resource management. While load balancers can simplify client configuration and enhance connectivity, they may introduce overhead and potential issues. Proper instance and storage selection, along with careful container resource management, are crucial for maintaining optimal performance and reliability in a virtualized or containerized environment.
