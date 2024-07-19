@@ -1490,1012 +1490,277 @@ Example subjects:
 
 Each subject can be used without input, but JSON with type-specific options can be sent.
 
+### Operator Mode
 
-#### Operator Mode
+#### Connecting Accounts
 
-### Connecting Accounts
+To connect accounts via exports and imports using JWTs, follow these steps:
 
+1. **Add an export**:
+   
+   ```sh
+   nsc add export --name <export name> --subject <export subject>
+   ```
 
-#### As shown in what are accounts, they can be connected via exports and imports. While in
+   - To export a service, add `--service`.
+   - To make the export private, add `--private`. Generate a token for the private export:
 
-#### conguration les this is straight forward, this becomes a bit more complicated when
+   ```sh
+   nsc generate activation --account <account name> --subject <export subject> --output-file <token file> --target-account <account identity public NKEY>
+   ```
 
-#### using JWTs. In part this is due to the addition of new concepts such as
+2. **Add an import**:
+   
+   - For a public export:
+     
+     ```sh
+     nsc add import --account <account name> --src-account <account identity public NKEY> --remote-subject <subject of export>
+     ```
 
-#### public/private/activation tokens that do not make sense in a cong based context.
+   - For a service, add `--service`.
+   - For a private export:
 
-#### Add an export with:
+     ```sh
+     nsc add import --account <account name> --token <token file or url>
+     ```
 
-#### nsc add export --name <export name> --subject <export subject> This will
-
-#### export a public stream that can be imported by any account. To alter the export to be a
-
-#### service add --service.
-
-#### To have more control over which account is allowed to import provide the option
-
-#### --private. When doing so only accounts for which you generate tokens can add the
-
-#### matching import. A token can be generated and stored in a le as follows:
-
-```
-nsc generate activation --account <account name> --subject <export
-subject> --output-file <token file> --target-account <account identity
-public NKEY>
-```
-#### The resulting le can then be exchanged with the importer.
-
-#### To add an import for a public export use
-
-```
-nsc add import --account <account name> --src-account <account identity
-public NKEY> --remote-subject <subject of export>
-```
-#### . To import a service provide the option --service.
-
-#### To add an import for a private export use
-
-#### nsc add import --account <account name> --token <token file or url> If your
-
-#### nsc environment contains operator and account signing NKEYs, nsc add import -i
-
-#### will generate token to embed on the y
-
-#### Between export/import/activation tokens there are many subjects in use. Their
-
-#### relationship is as follows:
-
-#### Exports
-
-#### Imports
-
-#### Import Subjects
-
-
-#### In order to be independent of subject names chosen by the exporter, importing allows to
-
-#### remap the imported subject. To do so provide the option
-
-#### --remote-subject <subject name> to the import command.
-
-#### This example will change the subject name the importing account uses locally from the
-
-#### exporter picked subject foo to bar.
-
-#### NSC can generate diagrams of inter account relationships using:
-
-#### nsc generate diagram component --output-file test.uml The generated le
-
-#### contains a plantuml component diagram of all accounts connected through their
-
-#### exports/imports. To turn the le into a .png execute: plantuml -tpng test.uml If the
-
-#### diagram is cut off, increase available memory and image size limit with these options:
-
-```
--Xmx2048m -DPLANTUML_LIMIT_SIZE=16384
-```
-#### Identity keys are extremely important, so you may want to keep them safe and instead
-
-#### hand out more easily replaceable signing keys to operators. Key importance generally
-
-#### follows the chain of trust with operator keys being more important than account keys.
-
-#### Furthermore, identity keys are more important than signing keys.
-
-#### Import subject is identical to or a subset of the exported subject.
-
-#### An activation token's subject is identical to or a subset of the exported subject.
-
-#### An activation token's subject is also identical to or a subset of the import subject of
-
-#### the account it is embedded in.
-
-```
-nsc add import --account test --src-account ACJ6G45BE7LLOFCVAZSZR3RY4XELX
-```
-```
-[ OK ] added stream import "blo"
-```
 #### Import Remapping
+
+To remap an imported subject:
+
+```sh
+nsc add import --account <account name> --src-account <account identity public NKEY> --remote-subject <subject name> --local-subject <new subject name>
+```
 
 #### Visualizing Export/Import Relationships
 
+Generate a diagram of inter-account relationships:
+
+```sh
+nsc generate diagram component --output-file test.uml
+```
+
+Convert the diagram to PNG:
+
+```sh
+plantuml -tpng test.uml -Xmx2048m -DPLANTUML_LIMIT_SIZE=16384
+```
+
 ### Managing Keys
 
-
-#### There are instances where regenerating a completely new identity key of either type is not
-
-#### a feasible option. For example, you might have an extremely large deployment (IoT)
-
-#### where there is simply too much institutional overhead. In this case, we suggest you
-
-#### securely backup identity keys oine and use exchangeable signing keys instead.
-
-#### Depending on which key was compromised, you may have to exchange signing keys and
-
-#### re-sign all JWTs signed with the compromised key. The compromised key may also have
-
-#### to be revoked.
-
-#### Whether you simply plan to regenerate new NKEY/JWT or exchange signing NKEYs and
-
-#### re-sign JWTs, in either case, you need to prepare and try this out beforehand and not wait
-
-#### until disaster strikes.
-
-#### Usage of signing keys for Operator and Account has been shown in the nsc section.
-
-#### This shows how to take an identity key oine. Identity NKEY of the operator/account is
-
-#### the only one allowed to modify the corresponding JWT and thus add/remove signing
-
-#### keys. Thus, initial signing keys are best created and assigned prior to removing the
-
-#### private identity NKEY.
-
-#### Basic strategy: take them oine & delete in nsc NKEY directory.
-
-#### Use nsc env to determine your NKEY directory. (Assuming ~/.nkeys for this example)
-
-#### nsc list keys --all lists all keys under your operator and indicates if they are
-
-#### present and if they are signing keys.
-
-#### Keys for your Operator/Account can be found under
-
-#### <nkyesdir>/keys/O/../<public-nkey>.nk or
-
-#### <nkyesdir>/keys/A/../<public-nkey>.nk. The operator identity NKEY
-
-#### ODMFND7EIJ2MBHNPO2JHCKOZIAY6NAK7OT4V2ZT2C5O6LEB3DPKYV3QL would
-
-#### reside under
-
-```
-~/.nkeys/keys/O/DM/ODMFND7EIJ2MBHNPO2JHCKOZIAY6NAK7OT4V2ZT2C5O6LEB3DPKYV3Q
-L.nk
-```
-#### .
-
-#### Please note that key storage is sharded by the 2nd and 3rd letter in the key
-
-#### Protect Identity NKEYs
-
-
-#### Once these les are backed up and deleted nsc list keys --all will show them as
-
-#### not stored. You can continue as normal, nsc will pick up signing keys instead.
-
-#### Since you typically distribute user keys or creds les to your applications, there is no need
-
-#### for nsc to hold on to them in the rst place. Credentials les are a concatenated user
-
-#### JWT and the corresponding private key, so don't forget to delete that as well.
-
-#### Key and creds can be found under <nkyesdir>/keys/U/../<public-nkey>.nk and
-
-```
-<nkyesdir>/creds/<operator-name>/<account-name>/<user-name>.creds
-```
-#### If you can easily re-deploy all necessary keys and JWTs, simply by re-generating a new
-
-#### account/user (possibly operator) this will be the simplest solution. The steps necessary
-
-#### are identical to the initial setup, which is why it would be preferred. In fact, for user NKEYs
-
-#### and JWT, generating and distributing new ones to affected applications is the best option.
-
-#### Even if regeneration of an account or operator is not your rst choice, it may be your
-
-#### method of last resort. Below sections outline the steps this would entail.
-
-#### In order to reissue an operator identity NKEY use nsc reissue operator. It will
-
-#### generate a new identity NKEY and use it to sign the operator. nsc will also re-sign all
-
-#### accounts signed by the original identity NKEY. Accounts signed by operator signing keys
-
-#### will remain untouched.
-
-#### The altered operator JWT will have to be deployed to all affected nats-server (one
-
-#### server at a time). Once all nats-server have been restarted with the new operator, push
-
-#### the altered accounts. Depending on your deployment mode you may have to distribute
-
-#### the operator JWT and altered account JWT to all other nsc environments.
-
-#### This process will be a lot easier when operator signing keys were used throughout and no
-
-#### account will be re-signed because of this. If they were not, you can convert the old
-
-#### identity NKEY into a signing key using
-
-#### nsc reissue operator --convert-to-signing-key. On your own time - you can then
-
-#### Reissue Identity NKEYs
-
-#### Operator
-
-
-#### remove the then signing NKEY using nsc edit operator --rm-sk O.. and redeploy
-
-#### the operator JWT to all nats-server.
-
-#### Unlike with the operator, account identity NKEYs can not be changed as easily. User JWT
-
-#### explicitly reference the account identity NKEY such that the nats-server can download
-
-#### them via a resolver. This complicates reissuing these kind of NKEYs, which is why we
-
-#### strongly suggest sticking to signing keys.
-
-#### The basic approach is to:
-
-#### 1. generate a new account with similar settings - including signing NKEYs,
-
-#### 2. re-sign all users that used to be signed by the old identity NKEY,
-
-#### 3. push the account and,
-
-#### 4. deploy the new user JWT to all programs running inside the account.
-
-#### When signing keys were used, the account identity NKEY would only be needed to self-
-
-#### sign the account JWT exchange with an administrators/operators nsc environment.
-
-#### JWTs for user, activations and accounts can be explicitly revoked. Furthermore, signing
-
-#### keys can be removed, thus invalidating all JWTs signed by the removed NKEY.
-
-#### To revoke all JWTs for a user in a account issue
-
-#### nsc revocations add-user --account <account name> --name <user name>.
-
-#### With the argument --at you can specify a time different than now. Use
-
-#### nsc revocations list-users --account <account name> to inspect the result or
-
-#### nsc revocations delete-user --account <account name> --name <user name> to
-
-#### remove the revocation.
-
-```
-nsc revocations add-user --account SYS --name sys
-```
-#### Account
+#### Protecting Identity NKEYs
+
+1. **Backup identity NKEYs offline**.
+2. **Use signing keys** for operators and accounts.
+3. **Remove private identity NKEYs from the nsc directory**:
+   
+   ```sh
+   nsc list keys --all
+   nsc env
+   ```
+
+4. **Reissue Identity NKEYs**:
+   
+   - **Operator**:
+     
+     ```sh
+     nsc reissue operator
+     ```
+
+   - **Convert old identity NKEY to a signing key**:
+     
+     ```sh
+     nsc reissue operator --convert-to-signing-key
+     ```
 
 #### Revocations
 
-#### User
+1. **Revoke User JWTs**:
+   
+   ```sh
+   nsc revocations add-user --account <account name> --name <user name>
+   ```
+
+   - List revoked users:
+     
+     ```sh
+     nsc revocations list-users --account <account name>
+     ```
+
+2. **Revoke Activation Tokens**:
+   
+   ```sh
+   nsc revocations add-activation --account <account name> --subject <export subject> --target-account <account identity public NKEY>
+   ```
+
+   - List revoked activations:
+     
+     ```sh
+     nsc revocations list-activations --account <account name>
+     ```
+
+3. **Revoke Accounts**:
+   
+   ```sh
+   nsc edit account --name <account name> --conns 0
+   nsc push --all
+   ```
+
+   - Remove the account JWT depending on resolver type:
+     
+     - **mem-resolver**: Remove from configuration field `resolver_preload` and restart `nats-server`.
+     - **url-resolver**: Manually delete the JWT from the `nats-account-server` store directory.
+     - **nats-resolver**: Prune removed accounts:
+
+       ```sh
+       nsc push --all --prune
+       ```
+
+#### Removing Signing Keys
+
+1. **Remove an operator signing key**:
+   
+   ```sh
+   nsc edit operator --rm-sk <signing key>
+   ```
+
+2. **Remove an account signing key**:
+   
+   ```sh
+   nsc edit account --name <account name> --rm-sk <signing key>
+   nsc push --all
+   ```
+
+### Upgrading a Cluster
+
+1. **Set up initial servers**:
 
+   ```sh
+   nats-server -D -p 4222 -cluster nats://localhost:6222 -routes nats://localhost:6222
+   nats-server -D -p 4333 -cluster nats://localhost:6333 -routes nats://localhost:6222
+   ```
 
-#### Please note that the revocation created only applies to JWTs issued before the time
+2. **Add a new server for rolling upgrade**:
 
-#### listed. Users created or updated after revocation will be valid as they are outside of the
+   ```sh
+   nats-server -D -p 4444 -cluster nats://localhost:6444 -routes nats://localhost:6222
+   ```
 
-#### revocation time. Also, please be aware that adding a revocation will modify the account
+3. **Client to observe server movement**:
 
-#### and therefore has to be pushed in order to publicize the revocation.
+   ```sh
+   nats sub -s nats://localhost:4222 ">"
+   ```
 
-#### To revoke all activations of the export, identied by --account and --subject (
+4. **Upgrade process**:
+   - Stop, update, and restart each server one at a time.
+   - Monitor client reconnections to other servers.
 
-#### --stream if the export is a stream), issued for a given Account identity NKEY use:
+5. **After upgrading**:
+   - Turn off the temporary server `C`.
 
-#### Use nsc revocations list-activations --account SYS to inspect the result or:
+### Slow Consumers
 
-#### to remove the revocation.
+#### Handling Slow Consumers in Clients
 
-```
-[ OK ] revoked user "UCL5YXXUKCEO4HDTTYUOHDMHP4JJ6MGE3SVQBDWFZUGJUMUKE24D
-```
-```
-nsc revocations list-users
-```
-###### +------------------------------------------------------------------------
+1. **Define and register an asynchronous error handler**:
 
-```
-| Revoked Users for test5
-+----------------------------------------------------------+-------------
-| Public Key | Revoke Crede
-+----------------------------------------------------------+-------------
-| UAX7KQJJNL5NIRTSQSANKE3DNBHLLFUYKRXCD5QRKI75XBEHQOA4ZZGV | Wed, 10 Feb
-+----------------------------------------------------------+-------------
-```
-```
-nsc revocations add-activation --account <account name> --subject <export
---target-account <account identity public NKEY>
-```
-```
-nsc revocations delete_activation --account <account name> \
---subject <export name> --target-account <account identity public NKEY>
-```
-```
-nsc revocations add-activation --account SYS --subject foo \
---target-account AAUDEW26FB4TOJAQN3DYMDLCVXZMNIJWP2EMOAM5HGKLF6RGMO2PV7W
-```
-```
-[ OK ] revoked activation "foo" for account AAUDEW26FB4TOJAQN3DYMDLCVXZMN
-```
-#### Activations
+   ```go
+   func natsErrHandler(nc *nats.Conn, sub *nats.Subscription, natsErr error) {
+       fmt.Printf("error: %v\n", natsErr)
+       if natsErr == nats.ErrSlowConsumer {
+           pendingMsgs, _, err := sub.Pending()
+           if err != nil {
+               fmt.Printf("couldn't get pending messages: %v", err)
+               return
+           }
+           fmt.Printf("Falling behind with %d pending messages on subject %q\n", pendingMsgs, sub.Subject)
+           // Log error, notify operations...
+       }
+       // check for other errors
+   }
 
+   nc, err := nats.Connect("nats://localhost:4222", nats.ErrorHandler(natsErrHandler))
+   ```
 
-#### Please note the revocation created only applies to JWTs issued before the time listed.
+2. **Set the pending limits**:
 
-#### Activations created or edited after, will be valid as they are outside of the revocation time.
+   ```go
+   if err := sub.SetPendingLimits(1024 * 500, 1024 * 5000); err != nil {
+       log.Fatalf("Unable to set pending limits: %v", err)
+   }
+   ```
 
-#### Also be aware that adding a revocation will modify the account and therefore has to be
+#### Handling Slow Consumers in Servers
 
-#### pushed in order to publicize the revocation.
+- **Server output**:
+  
+  ```plaintext
+  [54083] 2017/09/28 14:45:18.001357 [INF] ::1:63283 - cid:7 - Slow Consumer
+  ```
 
-#### Account identity NKEYS can not be revoked like user or activations. Instead lock out all
+- **Server monitoring endpoint**:
+  
+  - `varz` endpoint for slow consumer count.
 
-#### users by setting the connection count to 0 using
+- **Tuning NATS Server**:
 
-#### nsc edit account --name <account name> --conns 0 and pushing the change using
+  ```sh
+  write_deadline: 2s
+  ```
 
-#### nsc push --all.
+### Signals
 
-#### Alternatively you can also remove the account using nsc delete account --name and
+#### Sending Signals to NATS Server
 
-#### keep it from found by the account resolver. How to do this depends on your resolver type:
+- **Quit the server**:
 
-```
-nsc revocations list-activations --account SYS
-```
-###### +------------------------------------------------------------------------
+  ```sh
+  nats-server --signal quit
+  ```
 
-```
-| Revoked Accounts for stream foo
-+----------------------------------------------------------+-------------
-| Public Key | Revoke Crede
-+----------------------------------------------------------+-------------
-| AAUDEW26FB4TOJAQN3DYMDLCVXZMNIJWP2EMOAM5HGKLF6RGMO2PV7WP | Wed, 10 Feb
-+----------------------------------------------------------+-------------
-```
-#### mem-resolver:
+- **Stop the server**:
 
-#### Remove the JWT from the conguration eld resolver_preload and restart all
+  ```sh
+  nats-server --signal stop
+  ```
 
-```
-nats-server
-```
-#### url-resolver:
+- **Lame duck mode**:
 
-#### Manually delete the JWT from the nats-account-server store directory.
+  ```sh
+  nats-server --signal ldm
+  ```
 
-#### nats-resolver: Prune removed accounts using: nsc push --all --prune.
+- **Reopen log file for log rotation**:
 
-#### For this to work, the resolver has to have deletion enabled (allow_delete: true)
+  ```sh
+  nats-server --signal reopen
+  ```
 
-#### and you need to be in possession of an operator signing key.
+- **Reload server configuration**:
 
-#### Accounts
+  ```sh
+  nats-server --signal reload
+  ```
 
-#### Signing keys
+### Profiling
 
+#### Enabling Profiling
 
-#### Accounts, Activations, and Users can be revoked in bulk by removing the respective
+1. **Set the prof_port**:
 
-#### signing key.
+   ```sh
+   prof_port = 65432
+   ```
 
-#### Remove an operator signing key: nsc edit operator --rm-sk <signing key> As a
+2. **Download memory profile**:
 
-#### modication of the operator, in order to take effect, all dependent nsc installations as
+   ```sh
+   curl -o mem.prof http://localhost:65432/debug/pprof/allocs
+   ```
 
-#### well as nats-server will need this new version of the operator JWT.
+3. **Download CPU profile**:
 
-#### Remove an account signing key:
-
-#### nsc edit account --name <account name> --rm-sk <signing key>. In order to take
-
-#### effect, a modication of an account needs to be pushed: nsc push --all.
-
-
-# Upgrading a Cluster
-
-#### The basic strategy for upgrading a cluster revolves around the server's ability to gossip
-
-#### cluster conguration to clients and other servers. When cluster conguration changes,
-
-#### clients become aware of new servers automatically. In the case of a disconnect, a client
-
-#### has a list of servers that joined the cluster in addition to the ones it knew about from its
-
-#### connection settings.
-
-#### Note that since each server stores it's own permission and authentication conguration,
-
-#### new servers added to a cluster should provide the same users and authorization to
-
-#### prevent clients from getting rejected or gaining unexpected privileges.
-
-#### For purposes of describing the scenario, let's get some ngers on keyboards, and go
-
-#### through the motions. Let's consider a cluster of two servers: 'A' and 'B', and yes - clusters
-
-#### should be three to v e servers, but for purposes of describing the behavior and cluster
-
-#### upgrade process, a cluster of two servers will suce.
-
-#### Let's build this cluster:
-
-#### The command above is starting nats-server with debug output enabled, listening for
-
-#### clients on port 4222, and accepting cluster connections on port 6222. The -routes
-
-#### option species a list of nats URLs where the server will attempt to connect to other
-
-#### servers. These URLs dene the cluster ports enabled on the cluster peers.
-
-#### Keen readers will notice a self-route. The NATS server will ignore the self-route, but it
-
-#### makes for a single consistent conguration for all servers.
-
-#### You will see the server started, we notice it emits some warnings because it cannot
-
-#### connect to 'localhost:6333'. The message more accurately reads:
-
-#### Let's x that, by starting the second server:
-
-```
-nats-server -D -p 4222 -cluster nats://localhost:6222 -routes nats://loca
-```
-```
-Error trying to connect to route: dial tcp localhost:6333: connect: conn
-```
-
-#### The second server was started on port 4333 with its cluster port on 6333. Otherwise the
-
-#### same as 'A'.
-
-#### Let's get one client, so we can observe it moving between servers as servers get
-
-#### removed:
-
-#### After starting the subscriber you should see a message on 'A' that a new client
-
-#### connected.
-
-#### We have two servers and a client. Time to simulate our rolling upgrade. But wait, before
-
-#### we upgrade 'A', let's introduce a new server 'C'. Server 'C' will join the existing cluster while
-
-#### we perform the upgrade. Its sole purpose is to provide an additional place where clients
-
-#### can go other than 'A' and ensure we don't end up with a single server serving all the clients
-
-#### after the upgrade procedure. Clients will randomly select a server when connecting
-
-#### unless a special option is provided that disables that functionality (usually called
-
-#### 'DontRandomize' or 'noRandomize'). You can read more about "Avoiding the Thundering
-
-#### Herd". Suce it to say that clients redistribute themselves about evenly between all
-
-#### servers in the cluster. In our case 1/2 of the clients on 'A' will jump over to 'B' and the
-
-#### remaining half to 'C'.
-
-#### Let's start our temporary server:
-
-#### After an instant or so, clients on 'A' learn of the new cluster member that joined. On our
-
-#### hands-on tutorial, nats sub is now aware of 3 possible servers, 'A' (specied when we
-
-#### started the tool) and 'B' and 'C' learned from the cluster gossip.
-
-#### We invoke our admin powers and turn off 'A' by issuing a CTRL+C to the terminal on 'A'
-
-#### and observe that either 'B' or 'C' reports that a new client connected. That is our
-
-#### nats sub client.
-
-```
-nats-server -D -p 4333 -cluster nats://localhost:6333 -routes nats://loca
-```
-```
-nats sub -s nats://localhost:4222 ">"
-```
-```
-nats server -D -p 4444 -cluster nats://localhost:6444 -routes nats://loca
-```
-
-#### We perform the upgrade process, update the binary for 'A', and restart 'A':
-
-#### We move on to upgrade 'B'. Notice that clients from 'B' reconnect to 'A' and 'C'. We
-
-#### upgrade and restart 'B':
-
-#### If we had more servers, we would continue the stop, update, restart rotation as we did for
-
-#### 'A' and 'B'. After restarting the last server, we can go ahead and turn off 'C.' Any clients on
-
-#### 'C' will redistribute to our permanent cluster members.
-
-#### In the examples above we started nats-server specifying two clustering routes. It is
-
-#### possible to allow the server gossip protocol drive it and reduce the amount of
-
-#### conguration. You could for example start A, B and C as follows:
-
-```
-nats-server -D -p 4222 -cluster nats://localhost:6222 -routes nats://loca
-```
-```
-nats-server -D -p 4333 -cluster nats://localhost:6333 -routes nats://loca
-```
-```
-nats-server -D -p 4222 -cluster nats://localhost:6222
-```
-```
-nats-server -D -p 4333 -cluster nats://localhost:6333 -routes nats://loca
-```
-```
-nats-server -D -p 4444 -cluster nats://localhost:6444 -routes nats://loca
-```
-## Seed Servers
-
-### A - Seed Server
-
-### B
-
-### C
-
-
-#### Once they connect to the 'seed server', they will learn about all the other servers and
-
-#### connect to each other forming the full mesh.
-
-#### Although the NATS server goes through rigorous testing for each release, there may be a
-
-#### need to revert to the previous version if you observe a performance regression for your
-
-#### workload. The support policy for the server is the current release as well as one patch
-
-#### version release prior. For example, if the latest is 2.8.4, a downgrade to 2.8.3 is
-
-#### supported. Downgrades to earlier versions may work, but is not recommended.
-
-#### Fortunately, the downgrade path is the same as the upgrade path as noted above. Swap
-
-#### the binary and do a rolling restart.
-
-## Downgrading
-
-
-# Slow Consumers
-
-#### To support resiliency and high availability, NATS provides built-in mechanisms to
-
-#### automatically prune the registered listener interest graph that is used to keep track of
-
-#### subscribers, including slow consumers and lazy listeners. NATS automatically handles a
-
-#### slow consumer. If a client is not processing messages quick enough, the NATS server
-
-#### cuts it off. To support scaling, NATS provides for auto-pruning of client connections. If a
-
-#### subscriber does not respond to ping requests from the server within the ping-pong
-
-#### interval, the client is cut off (disconnected). The client will need to have reconnect logic to
-
-#### reconnect with the server.
-
-#### In core NATS, consumers that cannot keep up are handled differently from many other
-
-#### messaging systems: NATS favors the approach of protecting the system as a whole over
-
-#### accommodating a particular consumer to ensure message delivery.
-
-#### What is a slow consumer?
-
-#### A slow consumer is a subscriber that cannot keep up with the message ow delivered
-
-#### from the NATS server. This is a common case in distributed systems because it is often
-
-#### easier to generate data than it is to process it. When consumers cannot process data fast
-
-#### enough, back pressure is applied to the rest of the system. NATS has mechanisms to
-
-#### reduce this back pressure.
-
-#### NATS identies slow consumers in the client or the server, providing notication through
-
-#### registered callbacks, log messages, and statistics in the server's monitoring endpoints.
-
-#### What happens to slow consumers?
-
-#### When detected at the client, the application is notied and messages are dropped to
-
-#### allow the consumer to continue and reduce potential back pressure. When detected in the
-
-#### server, the server will disconnect the connection with the slow consumer to protect itself
-
-#### and the integrity of the messaging system.
-
-## Slow consumers identified in the client
-
-
-#### A client can detect it is a slow consumer on a local connection and notify the application
-
-#### through use of the asynchronous error callback. It is better to catch a slow consumer
-
-#### locally in the client rather than to allow the server to detect this condition. This example
-
-#### demonstrates how to dene and register an asynchronous error handler that will handle
-
-#### slow consumer errors.
-
-#### With this example code and default settings, a slow consumer error would generate
-
-#### output something like this:
-
-#### Note that if you are using a synchronous subscriber,
-
-#### Subscription.NextMsg(timeout time.Duration) will also return an error indicating
-
-#### there was a slow consumer and messages have been dropped.
-
-#### When a client does not process messages fast enough, the server will buffer messages in
-
-#### the outbound connection to the client. When this happens and the server cannot write
-
-```
-func natsErrHandler(nc *nats.Conn, sub *nats.Subscription, natsErr error)
-fmt.Printf("error: %v\n", natsErr)
-if natsErr == nats.ErrSlowConsumer {
-pendingMsgs, _, err := sub.Pending()
-if err != nil {
-fmt.Printf("couldn't get pending messages: %v", err)
-return
-}
-fmt.Printf("Falling behind with %d pending messages on subject %q
-pendingMsgs, sub.Subject)
-// Log error, notify operations...
-}
-// check for other errors
-}
-```
-```
-// Set the error handler when creating a connection.
-nc, err := nats.Connect("nats://localhost:4222",
-nats.ErrorHandler(natsErrHandler))
-```
-```
-error: nats: slow consumer, messages dropped
-Falling behind with 65536 pending messages on subject "foo".
-```
-## Slow consumers identified by the server
-
-
-#### data fast enough to the client, in order to protect itself, it will designate a subscriber as a
-
-#### "slow consumer" and may drop the associated connection.
-
-#### When the server initiates a slow consumer error, you'll see the following in the server
-
-#### output:
-
-#### The server will also keep count of the number of slow consumer errors encountered,
-
-#### available through the monitoring varz endpoint in the slow_consumers eld.
-
-#### Apart from using NATS streaming or optimizing your consuming application, there are a
-
-#### few options available: scale, meter, or tune NATS to your environment.
-
-#### Scaling with queue subscribers
-
-#### This is ideal if you do not rely on message order. Ensure your NATS subscription belongs
-
-#### to a queue group, then scale as required by creating more instances of your service or
-
-#### application. This is a great approach for microservices - each instance of your
-
-#### microservice will receive a portion of the messages to process, and simply add more
-
-#### instances of your service to scale. No code changes, conguration changes, or downtime
-
-#### whatsoever.
-
-#### Create a subject namespace that can scale
-
-#### You can distribute work further through the subject namespace, with some forethought in
-
-#### design. This approach is useful if you need to preserve message order. The general idea
-
-#### is to publish to a deep subject namespace, and consume with wildcard subscriptions
-
-#### while giving yourself room to expand and distribute work in the future.
-
-#### For a simple example, if you have a service that receives telemetry data from IoT devices
-
-#### located throughout a city, you can publish to a subject namespace like Sensors.North,
-
-#### Sensors.South, Sensors.East and Sensors.West. Initially, you'll subscribe to
-
-```
-[54083] 2017/09/28 14:45:18.001357 [INF] ::1:63283 - cid:7 - Slow Consume
-```
-## Handling slow consumers
-
-
-#### Sensors.> to process everything in one consumer. As your enterprise grows and data
-
-#### rates exceed what one consumer can handle, you can replace your single consumer with
-
-#### four consuming applications to subscribe to each subject representing a smaller
-
-#### segment of your data. Note that your publishing applications remain untouched.
-
-#### Meter the publisher
-
-#### A less favorable option may be to meter the publisher. There are several ways to do this
-
-#### varying from simply slowing down your publisher to a more complex approach
-
-#### periodically issuing a blocking request-reply to match subscriber rates.
-
-#### Tune NATS through conguration
-
-#### The NATS server can be tuned to determine how much data can be buffered before a
-
-#### consumer is considered slow, and some ocially supported clients allow buffer sizes to
-
-#### be adjusted. Decreasing buffer sizes will let you identify slow consumers more quickly.
-
-#### Increasing buffer sizes is not typically recommended unless you are handling temporary
-
-#### bursts of data. Often, increasing buffer capacity will only postpone slow consumer
-
-#### problems.
-
-#### The NATS server has a write deadline it uses to write to a connection. When this write
-
-#### deadline is exceeded, a client is considered to have a slow consumer. If you are
-
-#### encountering slow consumer errors in the server, you can increase the write deadline to
-
-#### buffer more data.
-
-#### The write_deadline conguration option in the NATS server conguration le will tune
-
-#### this:
-
-#### Tuning this parameter is ideal when you have bursts of data to accommodate. Be sure
-
-#### you are not just postponing a slow consumer error.
-
-```
-write_deadline: 2s
-```
-### Server Configuration
-
-
-#### Most ocially supported clients have an internal buffer of pending messages and will
-
-#### notify your application through an asynchronous error callback if a local subscription is
-
-#### not catching up. Receiving an error locally does not necessarily mean that the server will
-
-#### have identied a subscription as a slow consumer.
-
-#### This buffer can be congured through setting the pending limits after a subscription has
-
-#### been created:
-
-#### The default subscriber pending message limit is 65536 , and the default subscriber
-
-#### pending byte limit is 65536*1024
-
-#### If the client reaches this internal limit, it will drop messages and continue to process new
-
-#### messages. This is aligned with NATS at most once delivery. It is up to your application to
-
-#### detect the missing messages and recover from this condition.
-
-```
-if err := sub.SetPendingLimits( 1024 * 500 , 1024 * 5000 ); err != nil {
-log.Fatalf("Unable to set pending limits: %v", err)
-}
-```
-### Client Configuration
-
-
-# Signals
-
-#### On Unix systems, the NATS server responds to the following signals:
-
-#### The nats-server binary can be used to send these signals to running NATS servers
-
-#### using the -sl ag:
-
-```
-Signal Result
-```
-```
-SIGKILL Kills the process immediately
-```
-```
-SIGQUIT Kills the process immediately and performs a core dump
-```
-```
-SIGINT Stops the server gracefully
-```
-```
-SIGTERM Stops the server gracefully
-```
-```
-SIGUSR1 Reopens the log le for log rotation
-```
-```
-SIGHUP Reloads server conguration le
-```
-```
-SIGUSR2 Stops the server after evicting all clients (lame duck mode)
-```
-```
-nats-server --signal quit
-```
-```
-nats-server --signal stop
-```
-## Command Line
-
-## Quit the server
-
-## Stop the server
-
-
-#### If there are multiple nats-server processes running, or if pgrep isn't available, you
-
-#### must either specify a PID or the absolute path to a PID le:
-
-#### As of NATS v2.10.0, a glob expression can be used to match one or more process IDs,
-
-#### such as:
-
-#### See the Windows Service section for information on signaling the NATS server on
-
-#### Windows.
-
-```
-nats-server --signal ldm
-```
-```
-nats-server --signal reopen
-```
-```
-nats-server --signal reload
-```
-```
-nats-server --signal stop=<pid>
-```
-```
-nats-server --signal stop=/path/to/pidfile
-```
-```
-nats-server --signal ldm= 12 *
-```
-### Lame duck mode the server
-
-### Reopen log file for log rotation
-
-### Reload server configuration
-
-### Multiple processes
-
-## Windows
-
-
-# Lame Duck Mode
-
-#### In production we recommend that a server is shut down with lame duck mode as a
-
-#### graceful way to slowly evict clients. With large deployments this mitigates the "thundering
-
-#### herd" situation that will place CPU pressure on servers as TLS enabled clients reconnect.
-
-#### Lame duck mode is initiated by signaling the server:
-
-#### After entering lame duck mode, the server will stop accepting new connections, wait for a
-
-#### 10 second grace period, then begin to evict clients over a period of time congurable by
-
-#### the lame_duck_duration conguration option. This period defaults to 2 minutes.
-
-#### When entering lame duck mode, the server will send a message to clients. Some
-
-#### maintainer supported clients will invoke an optional callback indicating that a server is
-
-#### entering lame duck mode. This is used for cases where an application can benet from
-
-#### preparing for the short outage between the time it is evicted and automatically
-
-#### reconnected to another server.
-
-```
-nats-server --signal ldm
-```
-## Server
-
-## Clients
-
-
-# Profiling
-
-#### When investigating and debugging a performance issue with the NATS Server (i.e.
-
-#### unexpectedly high CPU or RAM utilisation), it may be necessary for you to collect and
-
-#### provide proles fr om your deployment for troublshooting. These proles are crucial to
-
-#### understand where CPU time and memory are being spent.
-
-#### Note that proling is an advanced operation for development purposes only. Server
-
-#### operators should use the monitoring port instead for monitoring day-to-day runtime
-
-#### statistics.
-
-```
-nats-server does not have authentication/authorization for the proling endpoint. When
-you plan to open your nats-server to the internet make sure to not expose the proling
-port as well. By default, proling binds to every interface 0.0.0.0 so consider setting
-proling t o localhost or have appropriate rewall rules.
-```
-#### The NATS Server has pprof proling support built-in, although it must be enabled by
-
-#### setting the prof_port in your NATS Server conguration le. For example, to enable the
-
-#### proling port on TCP/65432:
-
-#### Once the proling port has been enabled, you can download proles as per the following
-
-#### sections.
-
-#### These proles can be inspected using go tool pprof, as per the Go documentation.
-
-```
-http://localhost:65432/debug/pprof/allocs
-```
-#### This endpoint will return instantly.
-
-```
-prof_port = 65432
-```
-## Enabling profiling
-
-## Memory profile
-
-
-#### For example, to download an allocation prole fr om NATS running on the same machine:
-
-#### The prole will be saved into mem.prof.
-
-```
-http://localhost:65432/debug/pprof/profile?seconds=30
-```
-#### This endpoint will block for the specied duration and then return. You can specify a
-
-#### different duration by adjusting ?seconds= in the URL if you want to sample a shorter or
-
-#### longer period of time.
-
-#### For example, to download a CPU prole fr om NATS running on the same machine with a
-
-#### 30 second window:
-
-#### The prole will be saved into cpu.prof.
-
-```
-curl -o mem.prof http://localhost:65432/debug/pprof/allocs
-```
-```
-curl -o cpu.prof http://localhost:65432/debug/pprof/profile?seconds= 30
-```
-### CPU profile
-
-
+   ```sh
+   curl -o cpu.prof http://localhost:65432/debug/pprof/profile?seconds=30
+   ```
